@@ -33,7 +33,6 @@ The code contains a band of string of text which is then appended by a series of
 
 |  **Variables**  |      **Functions**        |  **Pointers**   |  **Arguments**  |    **Macros**   |   **Data Structures**  |   **Properties**  |
 |-----------------|---------------------------|-----------------|-----------------|-----------------|------------------------|------------------------|
-|-----------------|---------------------------|-----------------|-----------------|-----------------|------------------------|------------------------|
 |     model       |   createModel             |       msg       |     number1     |     RND_SIZE    |        red_array       |         key  |
 |  reduce_array   | aggregateVowelOrConsonant |  vowel_count    |     number2     |       SIZE      |        red_count       |        data  |
 |  expand_array   |        collect            | consonant_count |                 |      LENGTH     |      reduce_array      |        index |
