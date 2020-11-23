@@ -8,10 +8,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 
 #define SIZE 20
 #define LENGTH 100
-#define PROB 0.5
+#define PROB 0.9
 #define RND_SIZE 100
 
 char model[LENGTH] = "I like the way you play it!";
@@ -63,9 +64,9 @@ void createModel() {
     ht4.data = "consonant";
     ht4.index = 3;
     hashArray[3] = ht4;
-    struct StickModel sm1 = {0, 1, 3};
+    struct StickModel sm1 = {0, 1, 1};
     stickModel[0] = sm1;
-    struct StickModel sm2 = {1, 1, 1};
+    struct StickModel sm2 = {1, 1, 2};
     stickModel[1] = sm2;
     struct StickModel sm3 = {2, 1, 3};
     stickModel[2] = sm3;
@@ -86,12 +87,11 @@ int aggregateVowelOrConsonant(char c) {
 }
 
 // aggregates the message passed in order to process the input text
-void collect(char *msg, int *vowel_count, int *consonant_count) {
-    int vidx = 0;
-    int cidx = 0;
+void collect(char *msg, int *vowel_count, int *consonant_count, int8_t convert) {
+    int vidx = convert ? 1 : 0;
+    int cidx = convert ? 1 : 0;
     char c;
     strcat(model, " ");
-    strcat(model, msg);
     int random = 0;
     float probability = 0.0f;
     for(int i = 0; i < sizeof(msg)/sizeof(msg[0])+1; i++) {
@@ -108,6 +108,7 @@ void collect(char *msg, int *vowel_count, int *consonant_count) {
             msg[i] = consonants[random];
         }
     }
+    strcat(model, msg);
     *vowel_count = vidx;
     *consonant_count = cidx;
 }
@@ -130,6 +131,21 @@ void reduce(int number, int *reduce_count, int *red_array) {
         *reduce_count += 1;
         reduce(number, reduce_count, red_array);
     }
+}
+
+void output_results(int* red_array, int* exp_array, int *red_count) {
+    printf("%s\n", "|  RM1  |  RM2  |  RM3  |  RM4  |  RM5  |  RM6  |  BLK  |  SUM  |");
+    printf("%s\n", "|  RS1  |  RS2  |  RS3  |  RS4  |  RS4  |  RS6  |  BLK  |  TOT  |");
+    int sum = 0;
+    for(int i = 0; i < *red_count; i++) {
+        printf("|    %d   ", exp_array[i]);
+        sum += exp_array[i];
+    }
+    printf("|    %d    |\n", sum);
+    for(int i = 0; i < *red_count; i++) {
+        printf("|    %d    ", red_array[i]);
+    }
+    printf("|    %s    |\n", "");
 }
 
 // expand must be driven by the usage of the parametric constraint via shared memory
@@ -178,6 +194,7 @@ void Parent_Process(int number1, int *expand_array, int *red_array, int *red_cou
 int main(int argc, char *argv[]) {
     int stat;
     int sum = 0;
+    srand(time(0));
     createModel();
 
     number1 = atoi(argv[1]);
@@ -188,10 +205,9 @@ int main(int argc, char *argv[]) {
 
     int vowel_count = 0;
     int consonant_count = 0;
+    int8_t convert = 1;
 
-    collect(text, &vowel_count, &consonant_count);
-
-    printf("%s\n", model);
+    collect(text, &vowel_count, &consonant_count, convert);
 
     pid_t pid = fork();
 
@@ -212,6 +228,8 @@ int main(int argc, char *argv[]) {
         close(dt);
         Parent_Process(number1, expand_array, (int*) red_array, (int*) red_count);
         sum = calc_sum(expand_array, (int*) red_count);
+        printf("%s\n", model);
+        output_results(reduce_array, expand_array, (int*) red_count);
     } else {
         sleep(0.1);
         Child_Process(number2, &reduce_count, reduce_array);
